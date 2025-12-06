@@ -60,7 +60,8 @@ class _PostDetailPageState extends State<PostDetailPage>
       _animationController.forward();
     } catch (e) {
       String errorMsg = e.toString();
-      if (e is NoInternetException || errorMsg.contains('Post not found locally')) {
+      if (e is NoInternetException ||
+          errorMsg.contains('Post not found locally')) {
         errorMsg = 'You are offline. Cannot load new details.';
       }
       setState(() {
@@ -74,7 +75,7 @@ class _PostDetailPageState extends State<PostDetailPage>
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.of(context).size;
     final isTablet = screenSize.width > 600;
-    
+
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -95,14 +96,14 @@ class _PostDetailPageState extends State<PostDetailPage>
   Widget _buildBody() {
     final screenSize = MediaQuery.of(context).size;
     final isTablet = screenSize.width > 600;
-    final horizontalPadding = isTablet 
-        ? screenSize.width * 0.15 
+    final horizontalPadding = isTablet
+        ? screenSize.width * 0.15
         : screenSize.width * 0.05;
     final containerPadding = isTablet ? 28.0 : 20.0;
     final titleFontSize = isTablet ? 32.0 : 26.0;
     final descriptionFontSize = isTablet ? 20.0 : 16.0;
     final sectionTitleFontSize = isTablet ? 24.0 : 20.0;
-    
+
     if (isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -150,7 +151,7 @@ class _PostDetailPageState extends State<PostDetailPage>
       child: LayoutBuilder(
         builder: (context, constraints) {
           final maxWidth = isTablet ? 800.0 : constraints.maxWidth;
-          
+
           return ConstrainedBox(
             constraints: BoxConstraints(maxWidth: maxWidth),
             child: SingleChildScrollView(
@@ -218,10 +219,7 @@ class _PostDetailPageState extends State<PostDetailPage>
                     decoration: BoxDecoration(
                       color: Colors.grey.shade50,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: Colors.grey.shade200,
-                        width: 1,
-                      ),
+                      border: Border.all(color: Colors.grey.shade200, width: 1),
                     ),
                     child: Text(
                       post!.body,
@@ -263,19 +261,12 @@ class _InfoChip extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: Colors.grey.shade300,
-          width: 1,
-        ),
+        border: Border.all(color: Colors.grey.shade300, width: 1),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            icon,
-            size: isTablet ? 20 : 16,
-            color: Colors.grey[700],
-          ),
+          Icon(icon, size: isTablet ? 20 : 16, color: Colors.grey[700]),
           SizedBox(width: isTablet ? 8 : 6),
           Text(
             label,
