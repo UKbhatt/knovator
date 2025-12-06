@@ -6,11 +6,15 @@ class PostLocalDataSource {
   static const String readStatusBoxName = 'read_status';
 
   Future<void> init() async {
-    if (!Hive.isAdapterRegistered(0)) {
-      Hive.registerAdapter(PostModelAdapter());
+    try {
+      if (!Hive.isAdapterRegistered(0)) {
+        Hive.registerAdapter(PostModelAdapter());
+      }
+      await Hive.openBox<PostModel>(postsBoxName);
+      await Hive.openBox<bool>(readStatusBoxName);
+    } catch (e) {
+      throw Exception('Failed to initialize Hive: $e');
     }
-    await Hive.openBox<PostModel>(postsBoxName);
-    await Hive.openBox<bool>(readStatusBoxName);
   }
 
   Future<void> cachePosts(List<PostModel> posts) async {

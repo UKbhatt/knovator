@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import '../../domain/entities/post.dart';
 import '../../domain/usecases/get_post_detail.dart';
 import '../bloc/posts_bloc.dart';
@@ -18,6 +20,88 @@ class PostsPage extends StatefulWidget {
 
 class _PostsPageState extends State<PostsPage> {
   String _sortBy = 'all';
+  bool _isConnected = true;
+  StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
+  final Connectivity _connectivity = Connectivity();
+
+  @override
+  void initState() {
+    super.initState();
+    _checkConnectivity();
+    _connectivitySubscription = _connectivity.onConnectivityChanged.listen(
+      (List<ConnectivityResult> results) {
+        final isConnected = !results.contains(ConnectivityResult.none);
+        if (_isConnected != isConnected) {
+          setState(() {
+            _isConnected = isConnected;
+          });
+          if (!isConnected) {
+            _showOfflineWarning();
+          } else {
+            _showOnlineMessage();
+          }
+        }
+      },
+    );
+  }
+
+  @override
+  void dispose() {
+    _connectivitySubscription?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _checkConnectivity() async {
+    final results = await _connectivity.checkConnectivity();
+    final isConnected = !results.contains(ConnectivityResult.none);
+    setState(() {
+      _isConnected = isConnected;
+    });
+  }
+
+  void _showOfflineWarning() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Icon(Icons.wifi_off, color: Colors.white),
+            SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'No internet connection. Please check your network settings.',
+                style: TextStyle(fontSize: 14),
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: Colors.red.shade700,
+        duration: Duration(seconds: 4),
+        behavior: SnackBarBehavior.fixed,
+      ),
+    );
+  }
+
+  void _showOnlineMessage() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Icon(Icons.wifi, color: Colors.white),
+            SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'Internet connection restored',
+                style: TextStyle(fontSize: 14),
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: Colors.green.shade700,
+        duration: Duration(seconds: 2),
+        behavior: SnackBarBehavior.fixed,
+      ),
+    );
+  }
 
   void _navigateToDetail(BuildContext context, int postId) {
     Navigator.push(
@@ -166,33 +250,36 @@ class _PostsPageState extends State<PostsPage> {
                 },
                 child: Column(
                   children: [
-                    if (isOffline)
+                    if (!_isConnected || isOffline)
                       Container(
                         width: double.infinity,
-                        color: Colors.orange.shade100,
+                        color: Colors.red.shade50,
                         padding: EdgeInsets.symmetric(
-                          horizontal: MediaQuery.of(context).size.width * 0.04,
-                          vertical: 8,
+                          horizontal: 16,
+                          vertical: 12,
                         ),
                         child: Row(
                           children: [
                             Icon(
                               Icons.wifi_off,
-                              size: MediaQuery.of(context).size.width * 0.04,
-                              color: Colors.orange.shade900,
+                              size: 20,
+                              color: Colors.red.shade700,
                             ),
-                            SizedBox(
-                              width: MediaQuery.of(context).size.width * 0.02,
-                            ),
-                            Flexible(
+                            SizedBox(width: 12),
+                            Expanded(
                               child: Text(
-                                'You\'re offline — showing saved content',
+                                'No internet connection. Showing saved content.',
                                 style: TextStyle(
-                                  fontSize:
-                                      MediaQuery.of(context).size.width * 0.03,
-                                  color: Colors.orange.shade900,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.red.shade700,
                                 ),
                               ),
+                            ),
+                            Icon(
+                              Icons.info_outline,
+                              size: 18,
+                              color: Colors.red.shade700,
                             ),
                           ],
                         ),
@@ -580,7 +667,7 @@ class _FilterChip extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               decoration: BoxDecoration(
                 color: isSelected
-                    ? Colors.white.withOpacity(0.3)
+                    ? Colors.white.withValues(alpha: 0.3)
                     : Colors.grey.shade300,
                 borderRadius: BorderRadius.circular(12),
               ),

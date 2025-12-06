@@ -14,26 +14,42 @@ import 'features/posts/presentation/pages/splash_screen.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await Hive.initFlutter();
+  try {
+    await Hive.initFlutter();
 
-  final localDataSource = PostLocalDataSource();
-  await localDataSource.init();
-  // await localDataSource.markAllAsUnread(); // when start make all posts unread
+    final localDataSource = PostLocalDataSource();
+    await localDataSource.init();
+    // await localDataSource.markAllAsUnread(); // when start make all posts unread
 
-  final dio = Dio();
-  final remoteDataSource = PostRemoteDataSource(dio: dio);
+    final dio = Dio(
+      BaseOptions(
+        connectTimeout: const Duration(seconds: 10),
+        receiveTimeout: const Duration(seconds: 10),
+        sendTimeout: const Duration(seconds: 10),
+      ),
+    );
+    final remoteDataSource = PostRemoteDataSource(dio: dio);
 
-  final repository = PostRepositoryImpl(
-    remoteDataSource: remoteDataSource,
-    localDataSource: localDataSource,
-  );
+    final repository = PostRepositoryImpl(
+      remoteDataSource: remoteDataSource,
+      localDataSource: localDataSource,
+    );
 
-  final getPosts = GetPosts(repository);
-  final getPostDetail = GetPostDetail(repository);
+    final getPosts = GetPosts(repository);
+    final getPostDetail = GetPostDetail(repository);
 
-  final postsBloc = PostsBloc(getPosts: getPosts, repository: repository);
+    final postsBloc = PostsBloc(getPosts: getPosts, repository: repository);
 
-  runApp(MyApp(postsBloc: postsBloc, getPostDetail: getPostDetail));
+    runApp(MyApp(postsBloc: postsBloc, getPostDetail: getPostDetail));
+  } catch (e, stackTrace) {
+    debugPrint('Error initializing app: $e');
+    debugPrint('Stack trace: $stackTrace');
+    runApp(
+      MaterialApp(
+        home: Scaffold(body: Center(child: Text('Error initializing app: $e'))),
+      ),
+    );
+  }
 }
 
 class MyApp extends StatelessWidget {
@@ -55,10 +71,7 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
       ),
-      home: _AppWrapper(
-        postsBloc: postsBloc,
-        getPostDetail: getPostDetail,
-      ),
+      home: _AppWrapper(postsBloc: postsBloc, getPostDetail: getPostDetail),
     );
   }
 }
@@ -67,10 +80,7 @@ class _AppWrapper extends StatefulWidget {
   final PostsBloc postsBloc;
   final GetPostDetail getPostDetail;
 
-  const _AppWrapper({
-    required this.postsBloc,
-    required this.getPostDetail,
-  });
+  const _AppWrapper({required this.postsBloc, required this.getPostDetail});
 
   @override
   State<_AppWrapper> createState() => _AppWrapperState();
