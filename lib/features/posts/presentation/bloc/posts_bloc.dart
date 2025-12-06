@@ -1,4 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/errors/exceptions.dart';
 import '../../domain/usecases/get_posts.dart';
 import '../../domain/repositories/post_repository.dart';
 import 'posts_event.dart';
@@ -13,22 +14,39 @@ class PostsBloc extends Bloc<PostsEvent, PostsState> {
     on<LoadPostsEvent>(_onLoadPostsEvent);
     on<SyncPostsEvent>(_onSyncPostsEvent);
     on<MarkAsReadEvent>(_onMarkAsReadEvent);
+    on<RefreshPostsEvent>(_onRefreshPostsEvent);
   }
 
   Future<void> _onLoadPostsEvent(
     LoadPostsEvent event,
     Emitter<PostsState> emit,
   ) async {
-    emit(const PostsLoading());
+    final localPosts = repository.getReadStatus();
+    final hasLocalData = localPosts.isNotEmpty;
+
+    if (!hasLocalData) {
+      emit(const PostsLoading());
+    }
 
     try {
       final posts = await getPosts();
       final readStatuses = repository.getReadStatus();
-      emit(PostsLoaded(posts, readStatuses));
+      emit(PostsLoaded(posts, readStatuses, isOffline: false));
 
       add(const SyncPostsEvent());
+    } on NoInternetException {
+      final posts = await getPosts();
+      final readStatuses = repository.getReadStatus();
+      emit(PostsLoaded(posts, readStatuses, isOffline: true));
     } catch (e) {
-      emit(PostsError(e.toString()));
+      final localPosts = repository.getReadStatus();
+      if (localPosts.isNotEmpty) {
+        final posts = await getPosts();
+        final readStatuses = repository.getReadStatus();
+        emit(PostsLoaded(posts, readStatuses, isOffline: true));
+      } else {
+        emit(PostsError(e.toString()));
+      }
     }
   }
 
@@ -39,10 +57,9 @@ class PostsBloc extends Bloc<PostsEvent, PostsState> {
     try {
       final posts = await getPosts();
       final readStatuses = repository.getReadStatus();
-      emit(PostsSyncing(posts, readStatuses));
+      emit(PostsSyncing(posts, readStatuses, isOffline: false));
+    } on NoInternetException {
     } catch (e) {
-      print('Syncronization error: $e');
-      emit(PostsError(e.toString()));
     }
   }
 
@@ -66,6 +83,31 @@ class PostsBloc extends Bloc<PostsEvent, PostsState> {
       );
       updatedReadStatuses[event.postId] = true;
       emit(PostsSyncing(currentState.updatedPosts, updatedReadStatuses));
+    }
+  }
+
+  Future<void> _onRefreshPostsEvent(
+    RefreshPostsEvent event,
+    Emitter<PostsState> emit,
+  ) async {
+    try {
+      final posts = await getPosts();
+      final readStatuses = repository.getReadStatus();
+      if (state is PostsLoaded) {
+        emit(PostsLoaded(posts, readStatuses, isOffline: false));
+      } else if (state is PostsSyncing) {
+        emit(PostsSyncing(posts, readStatuses, isOffline: false));
+      }
+      add(const SyncPostsEvent());
+    } on NoInternetException {
+      if (state is PostsLoaded) {
+        final currentState = state as PostsLoaded;
+        emit(PostsLoaded(currentState.posts, currentState.readStatuses, isOffline: true));
+      } else if (state is PostsSyncing) {
+        final currentState = state as PostsSyncing;
+        emit(PostsSyncing(currentState.updatedPosts, currentState.readStatuses, isOffline: true));
+      }
+    } catch (e) {
     }
   }
 }

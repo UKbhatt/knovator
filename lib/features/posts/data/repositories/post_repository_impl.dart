@@ -1,3 +1,4 @@
+import '../../../../core/errors/exceptions.dart';
 import '../../domain/entities/post.dart';
 import '../../domain/repositories/post_repository.dart';
 import '../datasources/post_remote_datasource.dart';
@@ -24,19 +25,18 @@ class PostRepositoryImpl implements PostRepository {
 
   @override
   Future<List<Post>> getPosts() async {
-    try {
-      final localPosts = localDataSource.getCachedPosts();
-      
-      if (localPosts.isNotEmpty) {
-        _syncWithApiInBackground();
-        return localPosts.map((model) => _modelToEntity(model)).toList();
-      }
+    final localPosts = localDataSource.getCachedPosts();
+    
+    if (localPosts.isNotEmpty) {
+      _syncWithApiInBackground();
+      return localPosts.map((model) => _modelToEntity(model)).toList();
+    }
 
+    try {
       final remotePosts = await remoteDataSource.getPosts();
       await localDataSource.cachePosts(remotePosts);
       return remotePosts.map((model) => _modelToEntity(model)).toList();
     } catch (e) {
-      final localPosts = localDataSource.getCachedPosts();
       if (localPosts.isNotEmpty) {
         return localPosts.map((model) => _modelToEntity(model)).toList();
       }
@@ -67,6 +67,7 @@ class PostRepositoryImpl implements PostRepository {
           return;
         }
       }
+    } on NoInternetException {
     } catch (e) {
     }
   }

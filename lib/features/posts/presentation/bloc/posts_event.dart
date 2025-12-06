@@ -24,3 +24,7 @@ class MarkAsReadEvent extends PostsEvent {
   List<Object?> get props => [postId];
 }
 
+class RefreshPostsEvent extends PostsEvent {
+  const RefreshPostsEvent();
+}
+

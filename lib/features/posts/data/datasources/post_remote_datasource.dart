@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import '../../../../core/errors/exceptions.dart';
 import '../models/post_model.dart';
 
 class PostRemoteDataSource {
@@ -17,17 +18,19 @@ class PostRemoteDataSource {
         throw Exception('Failed to load posts: ${response.statusCode}');
       }
     } on DioException catch (e) {
-      if (e.type == DioExceptionType.connectionTimeout ||
+      if (e.type == DioExceptionType.connectionError ||
+          e.type == DioExceptionType.connectionTimeout ||
           e.type == DioExceptionType.receiveTimeout) {
-        throw Exception(
-          'Connection timeout. Please check your internet connection.',
-        );
+        throw NoInternetException();
       } else if (e.type == DioExceptionType.badResponse) {
         throw Exception('Server error: ${e.response?.statusCode}');
       } else {
         throw Exception('Network error: ${e.message}');
       }
     } catch (e) {
+      if (e is NoInternetException) {
+        rethrow;
+      }
       throw Exception('Unexpected error: $e');
     }
   }
@@ -41,17 +44,19 @@ class PostRemoteDataSource {
         throw Exception('Failed to load post detail: ${response.statusCode}');
       }
     } on DioException catch (e) {
-      if (e.type == DioExceptionType.connectionTimeout ||
+      if (e.type == DioExceptionType.connectionError ||
+          e.type == DioExceptionType.connectionTimeout ||
           e.type == DioExceptionType.receiveTimeout) {
-        throw Exception(
-          'Connection timeout. Please check your internet connection.',
-        );
+        throw NoInternetException();
       } else if (e.type == DioExceptionType.badResponse) {
         throw Exception('Server error: ${e.response?.statusCode}');
       } else {
         throw Exception('Network error: ${e.message}');
       }
     } catch (e) {
+      if (e is NoInternetException) {
+        rethrow;
+      }
       throw Exception('Unexpected error: $e');
     }
   }

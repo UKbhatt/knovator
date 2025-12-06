@@ -19,21 +19,23 @@ class PostsLoading extends PostsState {
 class PostsLoaded extends PostsState {
   final List<Post> posts;
   final Map<int, bool> readStatuses;
+  final bool isOffline;
 
-  const PostsLoaded(this.posts, this.readStatuses);
+  const PostsLoaded(this.posts, this.readStatuses, {this.isOffline = false});
 
   @override
-  List<Object?> get props => [posts, readStatuses];
+  List<Object?> get props => [posts, readStatuses, isOffline];
 }
 
 class PostsSyncing extends PostsState {
   final List<Post> updatedPosts;
   final Map<int, bool> readStatuses;
+  final bool isOffline;
 
-  const PostsSyncing(this.updatedPosts, this.readStatuses);
+  const PostsSyncing(this.updatedPosts, this.readStatuses, {this.isOffline = false});
 
   @override
-  List<Object?> get props => [updatedPosts, readStatuses];
+  List<Object?> get props => [updatedPosts, readStatuses, isOffline];
 }
 
 class PostsError extends PostsState {

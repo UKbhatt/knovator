@@ -57,50 +57,103 @@ class PostsPage extends StatelessWidget {
             final readStatuses = state is PostsLoaded
                 ? state.readStatuses
                 : (state as PostsSyncing).readStatuses;
+            final isOffline = state is PostsLoaded
+                ? state.isOffline
+                : (state as PostsSyncing).isOffline;
 
-            return ListView.builder(
-              itemCount: posts.length,
-              itemBuilder: (context, index) {
-                final post = posts[index];
-                final isRead = readStatuses[post.id] ?? false;
-
-                return InkWell(
-                  onTap: () {
-                    context.read<PostsBloc>().add(MarkAsReadEvent(post.id));
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => PostDetailPage(
-                          postId: post.id,
-                          getPostDetail: getPostDetail,
-                        ),
+            return BlocListener<PostsBloc, PostsState>(
+              listenWhen: (previous, current) {
+                return previous != current && 
+                       (current is PostsLoaded && current.isOffline);
+              },
+              listener: (context, state) {
+                if (state is PostsLoaded && state.isOffline) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('No internet connection'),
+                      duration: Duration(seconds: 2),
+                    ),
+                  );
+                }
+              },
+              child: RefreshIndicator(
+                onRefresh: () async {
+                  context.read<PostsBloc>().add(const RefreshPostsEvent());
+                  await Future.delayed(const Duration(seconds: 1));
+                },
+              child: Column(
+                children: [
+                  if (isOffline)
+                    Container(
+                      width: double.infinity,
+                      color: Colors.orange.shade100,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
                       ),
-                    );
-                  },
-                  child: Container(
-                    color: isRead ? Colors.white : Colors.yellow.shade100,
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          post.title,
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
+                      child: Row(
+                        children: [
+                          Icon(Icons.wifi_off, size: 16, color: Colors.orange.shade900),
+                          const SizedBox(width: 8),
+                          Text(
+                            'You\'re offline — showing saved content',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.orange.shade900,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          post.body,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
+                        ],
+                      ),
+                    ),
+                  Expanded(
+                    child: ListView.builder(
+                      itemCount: posts.length,
+                      itemBuilder: (context, index) {
+                        final post = posts[index];
+                        final isRead = readStatuses[post.id] ?? false;
+
+                        return InkWell(
+                          onTap: () {
+                            context.read<PostsBloc>().add(MarkAsReadEvent(post.id));
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => PostDetailPage(
+                                  postId: post.id,
+                                  getPostDetail: getPostDetail,
+                                ),
+                              ),
+                            );
+                          },
+                          child: Container(
+                            color: isRead ? Colors.white : Colors.yellow.shade100,
+                            padding: const EdgeInsets.all(16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  post.title,
+                                  style: const TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  post.body,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
                     ),
                   ),
-                );
-              },
+                ],
+                ),
+              ),
             );
           }
 

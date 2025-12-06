@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/errors/exceptions.dart';
 import '../../domain/entities/post.dart';
 import '../../domain/usecases/get_post_detail.dart';
 
@@ -40,8 +41,12 @@ class _PostDetailPageState extends State<PostDetailPage> {
         isLoading = false;
       });
     } catch (e) {
+      String errorMsg = e.toString();
+      if (e is NoInternetException || errorMsg.contains('Post not found locally')) {
+        errorMsg = 'You are offline. Cannot load new details.';
+      }
       setState(() {
-        errorMessage = e.toString();
+        errorMessage = errorMsg.replaceAll('Exception: ', '');
         isLoading = false;
       });
     }
