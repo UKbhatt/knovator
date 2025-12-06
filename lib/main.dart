@@ -9,6 +9,7 @@ import 'features/posts/domain/usecases/get_posts.dart';
 import 'features/posts/domain/usecases/get_post_detail.dart';
 import 'features/posts/presentation/bloc/posts_bloc.dart';
 import 'features/posts/presentation/pages/posts_page.dart';
+import 'features/posts/presentation/pages/splash_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -54,10 +55,45 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
       ),
-      home: BlocProvider.value(
-        value: postsBloc,
-        child: PostsPage(getPostDetail: getPostDetail),
+      home: _AppWrapper(
+        postsBloc: postsBloc,
+        getPostDetail: getPostDetail,
       ),
+    );
+  }
+}
+
+class _AppWrapper extends StatefulWidget {
+  final PostsBloc postsBloc;
+  final GetPostDetail getPostDetail;
+
+  const _AppWrapper({
+    required this.postsBloc,
+    required this.getPostDetail,
+  });
+
+  @override
+  State<_AppWrapper> createState() => _AppWrapperState();
+}
+
+class _AppWrapperState extends State<_AppWrapper> {
+  bool _showSplash = true;
+
+  void _onSplashComplete() {
+    setState(() {
+      _showSplash = false;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_showSplash) {
+      return SplashScreen(onAnimationComplete: _onSplashComplete);
+    }
+
+    return BlocProvider.value(
+      value: widget.postsBloc,
+      child: PostsPage(getPostDetail: widget.getPostDetail),
     );
   }
 }
