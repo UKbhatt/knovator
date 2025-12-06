@@ -67,7 +67,7 @@ class _SplashScreenState extends State<SplashScreen>
               child: ScaleTransition(
                 scale: _scaleAnimation,
                 child: Text(
-                  'Knovator',
+                  'Knovator Assignment',
                   style: TextStyle(
                     fontSize: fontSize.clamp(32.0, 72.0),
                     fontWeight: FontWeight.bold,
